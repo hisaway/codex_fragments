@@ -1,19 +1,14 @@
 <!-- livebook:{"file_entries":[{"name":"hisaway.png","type":"attachment"},{"name":"hisaway_400x400.jpg","type":"attachment"}]} -->
 
-# Bandit LT
+# LT「mini Bandit」を作ってみる
 
 ```elixir
 Mix.install([
-  {:thousand_island, "~> 1.0"},
-  {:kino_vega_lite, "~> 0.1.11"}
+  {:thousand_island, "~> 1.0"}
 ])
 ```
 
 ## 目次／自己紹介
-
-
-
-<!-- livebook:{"break_markdown":true} -->
 
 ### 自己紹介
 
@@ -21,19 +16,93 @@ Mix.install([
 
 アイコン: ![](files/hisaway_400x400.jpg)
 
+#### 現在
+
 ElixirChipの研究開発者
+HW屋ではなく、HWとSWの繋ぎを考える役
+
+プログラマー歴は、12年弱
+
+#### それまで
+
+雑食です。
+
+* コンパイラの研究開発（学生時代／現在につながる）
+* 基幹システム保守運用
+* xR系のアプリ開発
+* Webアプリ開発
 
 ## 目次
 
-1. Banditってなに？
-   1. https://github.com/mtrudel/bandit
-   2. Banditを**使う**最小サンプル
-2. Banditを作る**最小**サンプル
-3. mini Bandit
+[Banditを使う最小サンプル:](./bandit_sample.livemd)
+
+## 今日のゴール
+
+* ちょっとBanditのコードが追えるようになる
+* 小さいHTTPサーバーを動かす
 
 <!-- livebook:{"break_markdown":true} -->
 
-[Banditを使う最小サンプル](./bandit_sample.livemd)
+### Q. なぜBanditのコード読んでんの？
+
+### A. 本当はPhoenixをまるごと高速化したい！
+
+が、いきなりまるごとできないので、機能を少しずつ切り出して高速化するため。
+
+## Banditってなに
+
+https://github.com/mtrudel/bandit
+
+TCP/TLS層はThousandIslandに任せて、HTTP1/HTTP2/WebSocket対応したシンプルなサーバー。
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph LR;
+  subgraph ThousandIsland
+    TCP-->TLS;
+  end
+  TLS-->HTTP1;
+  
+  subgraph Bandit
+    HTTP1
+    HTTP2
+    WebSocket
+  end
+  
+  TLS-->HTTP2;
+  TLS-->WebSocket;
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+### 今日の範囲
+
+```mermaid
+graph LR;
+  subgraph Today
+    HTTP1-->共通処理
+  end
+  HTTP2-->特有のいろいろ-->共通処理;
+```
+
+### 共通処理
+
+* レスポンスの作成
+  * ファイル読み込み
+  * HTTP1レスポンス
+
+## Bandit Code Reading
+
+https://github.com/mtrudel/bandit
+
+1. bandit.ex
+2. ThousandIslandのHEx Docsを紹介
+3. https://hexdocs.pm/thousand_island/ThousandIsland.Handler.html
+4. Bandit.InitialHandler
+5. Bandit.HTTP1.Handler
 
 ## mini Bandit
 
@@ -72,48 +141,8 @@ Process.register(new_pid, name)
 
 http://localhost:1234/
 
-## Roadmap?
-
-```elixir
-
-```
-
-https://docs.google.com/spreadsheets/d/1TiQmCHSlZoTBzD2YUVE8DHT9ObQBze88O8R60YY-BzA/edit?gid=0#gid=0
-
-## Banditってなに
-
-TCP/TLS層はThousandIslandに任せて、HTTP1/HTTP2/WebSocket対応したサーバー。
-
-mini bandit ＝
-
 <!-- livebook:{"break_markdown":true} -->
 
-<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+もうちょっとBanditっぽくした版
 
-```mermaid
-graph LR;
-  TCP-->TLS;
-  TLS-->HTTP1;
-
-  subgraph Today
-    HTTP1
-  end
-  
-  TLS-->HTTP2;
-  TLS-->WebSocket;
-```
-
-```mermaid
-graph LR;
-  subgraph Today
-    やるとこHTTP1-->共通処理
-  end
-  HTTP2-->特有のいろいろ-->共通処理;
-```
-
-```mermaid
-graph LR;
-  subgraph 共通処理
-    TEST    
-  end
-```
+https://github.com/hisaway/codex_fragments/tree/main/mini_bandit
