@@ -8,9 +8,7 @@ Mix.install([
 ])
 ```
 
-## 目次／自己紹介
-
-### 自己紹介
+## 自己紹介
 
 #### ニックネーム: hisaway
 
@@ -19,6 +17,7 @@ Mix.install([
 #### 現在
 
 ElixirChipの研究開発者
+
 HW屋ではなく、HWとSWの繋ぎを考える役
 
 プログラマー歴は、12年弱
@@ -32,11 +31,11 @@ HW屋ではなく、HWとSWの繋ぎを考える役
 * xR系のアプリ開発
 * Webアプリ開発
 
-## 目次
+<!-- livebook:{"break_markdown":true} -->
 
 [Banditを使う最小サンプル:](./bandit_sample.livemd)
 
-## 今日のゴール
+## LTのゴール
 
 * ちょっとBanditのコードが追えるようになる
 * 小さいHTTPサーバーを動かす
@@ -93,6 +92,7 @@ graph LR;
 * レスポンスの作成
   * ファイル読み込み
   * HTTP1レスポンス
+  * ~~（HTTP2やりたかったけど動かんかった）~~
 
 ## Bandit Code Reading
 
