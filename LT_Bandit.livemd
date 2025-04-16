@@ -23,12 +23,13 @@ Mix.install([
 
 ElixirChipの研究開発者
 
-### 流れ
+## 目次
 
 1. Banditってなに？
-2. Banditを**使う**最小サンプル
-3. Banditを作る**最小**サンプル
-4. mini Bandit
+   1. https://github.com/mtrudel/bandit
+   2. Banditを**使う**最小サンプル
+2. Banditを作る**最小**サンプル
+3. mini Bandit
 
 <!-- livebook:{"break_markdown":true} -->
 
