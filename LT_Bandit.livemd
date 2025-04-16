@@ -1,0 +1,118 @@
+<!-- livebook:{"file_entries":[{"name":"hisaway.png","type":"attachment"},{"name":"hisaway_400x400.jpg","type":"attachment"}]} -->
+
+# Bandit LT
+
+```elixir
+Mix.install([
+  {:thousand_island, "~> 1.0"},
+  {:kino_vega_lite, "~> 0.1.11"}
+])
+```
+
+## 目次／自己紹介
+
+
+
+<!-- livebook:{"break_markdown":true} -->
+
+### 自己紹介
+
+#### ニックネーム: hisaway
+
+アイコン: ![](files/hisaway_400x400.jpg)
+
+ElixirChipの研究開発者
+
+### 流れ
+
+1. Banditってなに？
+2. Banditを**使う**最小サンプル
+3. Banditを作る**最小**サンプル
+4. mini Bandit
+
+<!-- livebook:{"break_markdown":true} -->
+
+[Banditを使う最小サンプル](./bandit_sample.livemd)
+
+## mini Bandit
+
+```elixir
+defmodule HTTPHelloWorld do
+  @moduledoc """
+  A sample Handler implementation of a simple HTTP Server. Intended to be the
+  simplest thing that can answer a browser request and nothing more. Not even
+  remotely strictly HTTP compliant.
+  """
+
+  use ThousandIsland.Handler
+
+  @impl ThousandIsland.Handler
+  def handle_data(_data, socket, state) do
+    str = File.read!("./hello_world.html")
+    ThousandIsland.Socket.send(socket, "HTTP/1.0 200 OK\r\n\r\n#{str}")
+    {:close, state}
+  end
+end
+```
+
+```elixir
+name = :my_thousand_server
+```
+
+```elixir
+pid = Process.whereis(name)
+unless is_nil(pid), do: Supervisor.stop(pid)
+```
+
+```elixir
+{:ok, new_pid} = ThousandIsland.start_link(port: 1234, handler_module: HTTPHelloWorld)
+Process.register(new_pid, name)
+```
+
+http://localhost:1234/
+
+## Roadmap?
+
+```elixir
+
+```
+
+https://docs.google.com/spreadsheets/d/1TiQmCHSlZoTBzD2YUVE8DHT9ObQBze88O8R60YY-BzA/edit?gid=0#gid=0
+
+## Banditってなに
+
+TCP/TLS層はThousandIslandに任せて、HTTP1/HTTP2/WebSocket対応したサーバー。
+
+mini bandit ＝
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph LR;
+  TCP-->TLS;
+  TLS-->HTTP1;
+
+  subgraph Today
+    HTTP1
+  end
+  
+  TLS-->HTTP2;
+  TLS-->WebSocket;
+```
+
+```mermaid
+graph LR;
+  subgraph Today
+    やるとこHTTP1-->共通処理
+  end
+  HTTP2-->特有のいろいろ-->共通処理;
+```
+
+```mermaid
+graph LR;
+  subgraph 共通処理
+    TEST    
+  end
+```

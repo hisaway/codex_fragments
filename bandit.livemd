@@ -1,0 +1,89 @@
+<!-- livebook:{"file_entries":[{"name":"screen_shot.png","type":"attachment"}]} -->
+
+# Bandit
+
+```elixir
+Mix.install([
+  {:bandit, "~> 1.0"},
+  {:kino, "~> 0.13"},
+  {:plug, "~> 1.16"}
+])
+```
+
+## サンプルコード
+
+```elixir
+defmodule MyPlug do
+  use Plug.Router
+
+  plug(:match)
+  plug(:dispatch)
+
+  get "/" do
+    send_resp(conn, 200, "Hello from Bandit on Livebook!")
+  end
+
+  match _ do
+    send_resp(conn, 404, "Not found")
+  end
+end
+```
+
+```elixir
+{:ok, _} = Bandit.start_link(plug: MyPlug, port: 4000)
+```
+
+http://localhost:4000/
+
+にアクセスする。
+
+![]()
+
+## Banditの構造
+
+Banditは、HTTPサーバーを提供するライブラリ。多機能なPhoenixと比べてシンプルなことが特長。
+
+### 構成
+
+`ThousandIsland`というTCPの処理を行うライブラリに依存している。  
+Bandit.start_linkで起動したプロセスに対するリクエストの処理方法は、各プロトコル(HTTP/1、HTTP2など)専用に
+`Bandit.***.Handler`という形で実装されている。  
+内部的にGenServerを利用しているため、`handle_**`という関数群の処理を追うことで具体的なプロトコル処理が明らかになる。
+
+Banditで通信プロトコルを処理してリクエストがElixirで扱えるようになったあとは、対応するインターフェースに処理を移譲する。上記の例ではPlugモジュールが処理を行う。
+
+### ElixirChip導入方針（コードリーディング方針）
+
+* 通信プロトコルのドメインを絞って、該当するHandlerを読み進める。
+* HTTPリクエストやレスポンス生成は、Banditではなく[Plug](https://github.com/elixir-plug/plug/blob/v1.17.0/lib/plug/router.ex#L1)を読み進める必要がある。
+
+例として、[HTTP/2のデシリアライズのコード](https://github.com/mtrudel/bandit/blob/1b7fb617502a84120a2c8376452ae765598aef5d/lib/bandit/http2/frame.ex#L28C3-L49C6)を抜粋。
+
+```ELIXIR
+def deserialize(
+      <<length::24, type::8, flags::8, _reserved::1, stream_id::31, payload::binary-size(length),
+        rest::binary>>,
+      max_frame_size
+    )
+    when length <= max_frame_size do
+  type
+  |> case do
+    0x0 -> Bandit.HTTP2.Frame.Data.deserialize(flags, stream_id, payload)
+    0x1 -> Bandit.HTTP2.Frame.Headers.deserialize(flags, stream_id, payload)
+    0x2 -> Bandit.HTTP2.Frame.Priority.deserialize(flags, stream_id, payload)
+    0x3 -> Bandit.HTTP2.Frame.RstStream.deserialize(flags, stream_id, payload)
+    0x4 -> Bandit.HTTP2.Frame.Settings.deserialize(flags, stream_id, payload)
+    0x5 -> Bandit.HTTP2.Frame.PushPromise.deserialize(flags, stream_id, payload)
+    0x6 -> Bandit.HTTP2.Frame.Ping.deserialize(flags, stream_id, payload)
+    0x7 -> Bandit.HTTP2.Frame.Goaway.deserialize(flags, stream_id, payload)
+    0x8 -> Bandit.HTTP2.Frame.WindowUpdate.deserialize(flags, stream_id, payload)
+    0x9 -> Bandit.HTTP2.Frame.Continuation.deserialize(flags, stream_id, payload)
+    unknown -> Bandit.HTTP2.Frame.Unknown.deserialize(unknown, flags, stream_id, payload)
+  end
+  |> then(&{&1, rest})
+end
+```
+
+参考
+
+* [The lifecyle of a Handler](https://hexdocs.pm/thousand_island/ThousandIsland.Handler.html)

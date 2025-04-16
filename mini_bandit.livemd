@@ -1,0 +1,17 @@
+# Untitled notebook
+
+```elixir
+Mix.install([
+  {:mini_bandit, path: "./mini_bandit"}
+])
+```
+
+## Section
+
+```elixir
+# MiniBandit.start_link()
+```
+
+```elixir
+MiniBandit.start_link(:http2, mode: :http2, port: 4004)
+```

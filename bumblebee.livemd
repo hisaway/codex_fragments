@@ -1,0 +1,64 @@
+# Bumblebee
+
+```elixir
+Mix.install([
+  {:bumblebee, "~> 0.6.0"},
+  {:nx, "~> 0.9.0"},
+  {:exla, "~> 0.9.0"},
+  {:axon, "~> 0.7.0"},
+  {:kino, "~> 0.14.0"}
+])
+
+Nx.global_default_backend(EXLA.Backend)
+```
+
+## Bumblebeeの構造
+
+一言でいうと、各種ドメイン処理に適したE2Eのタスクを提供するライブラリ。  
+Bumblebeeは、Axonで作成したモデルやHuggingFaceなどのモデルを利用をサポートすることに加えて、
+モデルを利用するために必要な前処理（テキストのトークン化）や結果の後処理（出力の抽出やラベリング）を`Nx.Serving.run`で利用できる形で提供する。
+
+### 構成
+
+* `lib/bumblebee.ex`はモデルを利用するための準備段階に必要なコード
+* `lib/bumblebee/**.ex`は各種ドメインに対応した前処理や後処理を含んだservingを提供するコード
+
+内部的に利用されるライブラリを抜粋
+
+* Bumblebee.HuggingFace.*: 外部からモデルロードするときに利用。ローカルはFileモジュールを利用（重点を置く）
+* Jason: モデル仕様を読み込み際に使用
+* Unpickler: モデルのパラメータ読み込み時に使用。Pythonのpickleを読み込む。
+* Axon: モデルのビルドと、モデルを用いた予測(これをCPUモードで動かす)
+
+### ElixirChip導入方針（コードリーディング方針）
+
+AI予測のドメインを絞って前処理や後処理の一部を担うのがよい
+
+### 将来方針
+
+下記にモデルに関連するエントリーポイントをまとめた。
+
+* モデルロード: ローカルから読み込む前提で[`get_repo_files`](https://github.com/elixir-nx/bumblebee/blob/710a645222948f80208c348d3a2589cbd3ab8e7d/lib/bumblebee.ex#L1198C3-L1212C8)から読み込む
+* モデル予測: [`Axon.Compiler.build`](https://github.com/elixir-nx/axon/blob/c61077cb728bd612b1b952a1600e8d5c35c529b6/lib/axon/compiler.ex#L48)
+
+## サンプルコード
+
+```elixir
+{:ok, bert} = Bumblebee.load_model({:hf, "google-bert/bert-base-uncased"})
+{:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "google-bert/bert-base-uncased"})
+
+serving = Bumblebee.Text.fill_mask(bert, tokenizer)
+
+text_input = Kino.Input.text("Sentence with mask", default: "The capital of [MASK] is Paris.")
+```
+
+```elixir
+text = Kino.Input.read(text_input)
+
+Nx.Serving.run(serving, text)
+```
+
+```elixir
+inputs = Bumblebee.apply_tokenizer(tokenizer, "Hello Bumblebee!")
+outputs = Axon.predict(bert.model, bert.params, inputs)
+```

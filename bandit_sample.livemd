@@ -1,0 +1,43 @@
+# Bandit 最小サンプル
+
+```elixir
+# Mix.install([
+#   {:bandit, path: "/home/hisaway/github/bandit"}
+# ])
+Mix.install([
+  {:bandit, "~> 1.0"}
+])
+```
+
+## Section
+
+```elixir
+defmodule MyPlug do
+  use Plug.Router
+
+  plug(:match)
+  plug(:dispatch)
+
+  get "/" do
+    send_resp(conn, 200, "Hello from Bandit on Livebook!")
+  end
+  
+  match _ do
+    send_resp(conn, 404, "Not found")
+  end
+end
+```
+
+```elixir
+# 再評価でエラーにならないようにする
+pid = Process.whereis(:my_bandit_server)
+unless is_nil(pid), do: Supervisor.stop(pid)
+```
+
+```elixir
+{:ok, new_pid} = Bandit.start_link(plug: MyPlug, port: 4000)
+Process.register(new_pid, :my_bandit_server)
+```
+
+http://localhost:4000/
+https://localhost:4000/
