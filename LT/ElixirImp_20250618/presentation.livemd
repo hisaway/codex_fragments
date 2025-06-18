@@ -1,6 +1,6 @@
 <!-- livebook:{"file_entries":[{"name":"hisaway.png","type":"attachment"},{"name":"hisaway_400x400.jpg","type":"attachment"},{"name":"http2.png","type":"attachment"},{"name":"http21.png","type":"attachment"}]} -->
 
-# 20250618LT「 mini BanditとWeb開発に必要な機能実装 〜http2モドキ編〜」
+# mini BanditとWeb開発に必要な機能実装 〜http2モドキ編〜
 
 ## はじめに
 
@@ -9,11 +9,13 @@
 ## mini Bandit開発の経緯
 
 いろいろなライブラリをElixirChipで動かしたい  
+（現時点では、既存FPGAでそれなりに早く動かすことを目標とする）  
 →いきなり全部載せは難しい  
 →Webアプリ開発に絞ろう  
 →Phoenixだと豪華すぎるのでもっとシンプルなHTTPサーバーがいい  
 →Banditを参考にしよう
-→mini Bandit
+
+### →mini Bandit
 
 ## Bandit とは
 
@@ -47,14 +49,18 @@ graph LR;
 Webアプリ開発は最低限下記の機能があればできるはずなので作っていきたい
 
 * HTML/EExを表示
+  * Bandit + Plug.Route
 * DBアクセス（CRUD）
+  * Ecto
 * Web APIへのアクセス／JSON取得、加工
+  * Req
 
-しかし、これらの前提となる通信プロトコルもシンプルにしておきたい
+しかし、これらの前提となる通信プロトコルも課題になる
 
-* TCP → :gen_tcp依存でシンプルにするのは難しい
-* HTTP1 → TCPがあるのであれば、テキストベース通信なので前回お試し実装
-* HTTP2 → 本LTで一部を実装
+* TCP → :gen_tcp依存でElixir実装が存在しない
+* HTTP1 → TCP通信ができる前提で、BanditがHTTP処理をElixirのみで実装しているので、自前で簡易実装
+  * 前回行った→[ElixirImp 2025/04/16](../ElixirImp_20250416/presentation.livemd)
+* HTTP2 → 同様にBanditで本LTで一部を実装
 
 <!-- livebook:{"break_markdown":true} -->
 
@@ -111,7 +117,8 @@ graph LR;
 
 ## Bandit Code Reading
 
-バイナリフレームを処理しているところを探す
+バイナリフレームを処理している場所が下記  
+画像と比較しても仕様と一致させやすいような作りになっている
 
 <!-- livebook:{"break_markdown":true} -->
 
@@ -150,3 +157,7 @@ end
 
 * [mini Bandit HTTP2](./handler.livemd)
 * [test HTTP2モドキ](./handler_test.livemd)
+
+## まとめ
+
+
