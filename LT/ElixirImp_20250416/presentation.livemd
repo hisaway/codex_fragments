@@ -8,33 +8,6 @@ Mix.install([
 ])
 ```
 
-## 自己紹介
-
-#### ニックネーム: hisaway
-
-アイコン: ![](files/hisaway_400x400.jpg)
-
-#### 現在
-
-ElixirChipの研究開発者
-
-HW屋ではなく、HWとSWの繋ぎを考える役
-
-プログラマー歴は、12年弱
-
-#### それまで
-
-雑食です。
-
-* コンパイラの研究開発（学生時代／現在につながる）
-* 基幹システム保守運用
-* xR系のアプリ開発
-* Webアプリ開発
-
-<!-- livebook:{"break_markdown":true} -->
-
-[Banditを使う最小サンプル:](./bandit_sample.livemd)
-
 ## LTのゴール
 
 * ちょっとBanditのコードが追えるようになる
