@@ -1,0 +1,51 @@
+# Test Codes for mini-bandit HTTP2 Handler
+
+## Section
+
+```elixir
+defmodule Http2LikeClient do
+  def send_frames do
+    {:ok, socket} = :gen_tcp.connect(~c/localhost/, 1234, [:binary, active: false])
+
+    # 1. HEADERS フレームを送信
+    headers = "GET / HTTP/2"
+    send_frame(socket, 0x01, headers)
+    Process.sleep(50)
+    receive_response(socket)
+
+    # 2. DATA フレームを送信
+    body = "This is the request body."
+    send_frame(socket, 0x00, body)
+    Process.sleep(50)
+    receive_response(socket)
+
+    :gen_tcp.close(socket)
+  end
+
+  defp send_frame(socket, type, payload) do
+    len = byte_size(payload)
+
+    frame =
+      <<len::24, type::8, 0x00::8, 1::32>> <>
+        payload
+
+    :ok = :gen_tcp.send(socket, frame)
+    IO.puts("→ Sent frame type=0x#{Integer.to_string(type, 16)} len=#{len}")
+  end
+
+  defp receive_response(socket) do
+    with {:ok, <<len::24, type::8, _flags::8, stream_id::32>>} <- :gen_tcp.recv(socket, 9),
+         {:ok, payload} <- :gen_tcp.recv(socket, len) do
+      IO.puts("← Received frame type=0x#{Integer.to_string(type, 16)} stream_id=#{stream_id}")
+      IO.puts("← Payload: #{payload}")
+    else
+      {:error, reason} ->
+        IO.puts("⚠️ Failed to receive response: #{inspect(reason)}")
+    end
+  end
+end
+```
+
+```elixir
+Http2LikeClient.send_frames()
+```

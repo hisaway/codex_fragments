@@ -1,0 +1,26 @@
+<!-- livebook:{"file_entries":[{"name":"hisaway.png","type":"attachment"},{"name":"hisaway_400x400.jpg","type":"attachment"}]} -->
+
+# 自己紹介
+
+## 自己紹介
+
+#### ニックネーム: hisaway
+
+<img src="files/hisaway_400x400.jpg" width="200" />
+
+#### 現在
+
+ElixirChipの研究開発者
+
+HW屋ではなく、HWとSWの繋ぎを考える役
+
+プログラマー歴は、12年弱
+
+#### それまで
+
+雑食です。
+
+* コンパイラの研究開発（学生時代／現在につながる）
+* 基幹システム保守運用
+* xR系のアプリ開発
+* Webアプリ開発

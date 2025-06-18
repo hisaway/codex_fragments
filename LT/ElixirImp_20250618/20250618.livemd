@@ -1,0 +1,152 @@
+<!-- livebook:{"file_entries":[{"name":"hisaway.png","type":"attachment"},{"name":"hisaway_400x400.jpg","type":"attachment"},{"name":"http2.png","type":"attachment"},{"name":"http21.png","type":"attachment"}]} -->
+
+# 20250618LT「 mini BanditとWeb開発に必要な機能実装 〜http2モドキ編〜」
+
+## はじめに
+
+[自己紹介](../util/intro.livemd)
+
+## mini Bandit開発の経緯
+
+いろいろなライブラリをElixirChipで動かしたい  
+→いきなり全部載せは難しい  
+→Webアプリ開発に絞ろう  
+→Phoenixだと豪華すぎるのでもっとシンプルなHTTPサーバーがいい  
+→Banditを参考にしよう
+→mini Bandit
+
+## Bandit とは
+
+https://github.com/mtrudel/bandit
+
+TCP/TLS層はThousandIslandに任せて、HTTP1/HTTP2/WebSocket対応したシンプルなサーバー。
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph LR;
+  subgraph ThousandIsland
+    TCP-->TLS;
+  end
+  TLS-->HTTP1;
+  
+  subgraph Bandit
+    HTTP1
+    HTTP2
+    WebSocket
+  end
+  
+  TLS-->HTTP2;
+  TLS-->WebSocket;
+```
+
+## mini Banditの開発方針
+
+Webアプリ開発は最低限下記の機能があればできるはずなので作っていきたい
+
+* HTML/EExを表示
+* DBアクセス（CRUD）
+* Web APIへのアクセス／JSON取得、加工
+
+しかし、これらの前提となる通信プロトコルもシンプルにしておきたい
+
+* TCP → :gen_tcp依存でシンプルにするのは難しい
+* HTTP1 → TCPがあるのであれば、テキストベース通信なので前回お試し実装
+* HTTP2 → 本LTで一部を実装
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+graph LR;
+  HTTP-Client-->HTTP-HOST
+
+  HTTP-HOST-->HTML/CSS/JS/EEx
+  HTTP-HOST-->DB
+  HTTP-HOST-->Web-API
+```
+
+## LT内容
+
+[](./)
+
+```mermaid
+graph LR;
+  HTTP1-->HTML/CSS/JS/EEx
+  subgraph Today
+    HTTP2
+  end
+  HTTP2-->HTML/CSS/JS/EEx;
+```
+
+### 共通処理
+
+* レスポンスの作成
+  * HTTP2レスポンス
+
+## mini Bandit HTTP2モドキ対応
+
+普通にWebアプリ作ってるだけだと意識しないので、HTTP1とHTTP2の違いから整理
+
+| 機能                   | HTTP/1.1                                  | HTTP/2                                                                        |
+| ------------------------ | ----------------------------------------- | ----------------------------------------------------------------------------- |
+| 多重化（Multiplex） | 一度に1リクエスト/レスポンス | 1つのTCP接続上で複数のリクエスト/レスポンスが並行処理 |
+| ヘッダ圧縮          | 毎回全ヘッダ送信                  | HPACKによるヘッダ圧縮                                                 |
+| サーバープッシュ | 無し                                    | クライアントが要求する前にデータ送信可能                  |
+| バイナリフレーム | ❌ テキストベース                 | **バイナリフレーミング**                                            |
+
+<!-- livebook:{"break_markdown":true} -->
+
+全部はよくわからんので、入力となるバイナリフレームをそれっぽく実装
+
+<!-- livebook:{"break_markdown":true} -->
+
+こういう形らしい
+
+<!-- livebook:{"break_markdown":true} -->
+
+![](files/http2.png)
+引用：https://datatracker.ietf.org/doc/html/rfc7540#section-4.1
+
+## Bandit Code Reading
+
+バイナリフレームを処理しているところを探す
+
+<!-- livebook:{"break_markdown":true} -->
+
+https://github.com/mtrudel/bandit/blob/98918c67792b0f27e5bfcc1c295d2ed37d52a3c6/lib/bandit/http2/frame.ex#L28-L49
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+def deserialize(
+      <<length::24, type::8, flags::8, _reserved::1, stream_id::31, payload::binary-size(length),
+        rest::binary>>,
+      max_frame_size
+    )
+    when length <= max_frame_size do
+  type
+  |> case do
+    0x0 -> Bandit.HTTP2.Frame.Data.deserialize(flags, stream_id, payload)
+    0x1 -> Bandit.HTTP2.Frame.Headers.deserialize(flags, stream_id, payload)
+    0x2 -> Bandit.HTTP2.Frame.Priority.deserialize(flags, stream_id, payload)
+    0x3 -> Bandit.HTTP2.Frame.RstStream.deserialize(flags, stream_id, payload)
+    0x4 -> Bandit.HTTP2.Frame.Settings.deserialize(flags, stream_id, payload)
+    0x5 -> Bandit.HTTP2.Frame.PushPromise.deserialize(flags, stream_id, payload)
+    0x6 -> Bandit.HTTP2.Frame.Ping.deserialize(flags, stream_id, payload)
+    0x7 -> Bandit.HTTP2.Frame.Goaway.deserialize(flags, stream_id, payload)
+    0x8 -> Bandit.HTTP2.Frame.WindowUpdate.deserialize(flags, stream_id, payload)
+    0x9 -> Bandit.HTTP2.Frame.Continuation.deserialize(flags, stream_id, payload)
+    unknown -> Bandit.HTTP2.Frame.Unknown.deserialize(unknown, flags, stream_id, payload)
+  end
+  |> then(&{&1, rest})
+end
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+実装と動作用スクリプト
+
+* [mini Bandit HTTP2](./handler.livemd)
+* [test HTTP2モドキ](./handler_test.livemd)
