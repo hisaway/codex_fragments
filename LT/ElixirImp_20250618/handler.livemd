@@ -1,0 +1,88 @@
+# mini-bandit HTTP2 handler(deps on ThousandIsland)
+
+```elixir
+Mix.install([
+  {:thousand_island, "~> 1.0"}
+])
+```
+
+## HTTP2 module
+
+```elixir
+defmodule Http2LikeServer do
+  use ThousandIsland.Handler
+
+  @impl ThousandIsland.Handler
+  def handle_connection(_socket, state) do
+    {:continue, state}
+  end
+
+  @impl ThousandIsland.Handler
+  def handle_data(data, socket, state) do
+    data
+    |> deserialize()
+    |> case do
+      {:ok, {:headers, payload}} ->
+        IO.puts("Received headers: #{payload}")
+        # レスポンスデータを作成
+        response_payload = "Hello from HTTP2-like server!"
+        response_frame = serialize(:data, response_payload)
+        ThousandIsland.Socket.send(socket, response_frame)
+        {:continue, state}
+
+      {:ok, {:data, payload}} ->
+        IO.puts("Received data: #{payload}")
+        response_payload = "ACK: Received DATA (#{byte_size(payload)} bytes)"
+        response_frame = serialize(:data, response_payload)
+        ThousandIsland.Socket.send(socket, response_frame)
+
+        {:continue, state}
+
+      :error ->
+        IO.puts("Failed to parse frame.")
+        {:close, state}
+    end
+  end
+
+  # フレームの解析
+  defp deserialize(<<_length::24, type::8, _flags::8, _stream_id::32, payload::binary>>) do
+    case type do
+      0x01 -> {:ok, {:headers, payload}}
+      0x00 -> {:ok, {:data, payload}}
+      _ -> :error
+    end
+  end
+
+  defp deserialize(_), do: :error
+
+  # フレームの構築
+  defp serialize(:headers, payload), do: serialize(0x01, payload)
+  defp serialize(:data, payload), do: serialize(0x00, payload)
+
+  defp serialize(type, payload) do
+    length = byte_size(payload)
+    <<length::24, type::8, 0x00::8, 1::32, payload::binary>>
+  end
+end
+```
+
+## Run
+
+```elixir
+name = :my_thousand_server
+```
+
+```elixir
+pid = Process.whereis(name)
+unless is_nil(pid), do: Supervisor.stop(pid)
+```
+
+```elixir
+{:ok, new_pid} = ThousandIsland.start_link(port: 1234, handler_module: Http2LikeServer)
+Process.register(new_pid, name)
+```
+
+## Test
+
+テスト用サーバーを使います  
+[handler_test](./handler_test.livemd)
